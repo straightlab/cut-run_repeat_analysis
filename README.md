@@ -3,7 +3,7 @@ Scripts to prepare data for DEseq2 analysis for cut&amp;run data mapping to cent
 
 This analysis accompanies the Sidhwani et al. (2025) paper "Histone H3 lysine methyltransferase activities control compartmentalization of human centromeres." Specifically, this pipeline is designed to take an adapter-trimmed cut&run dataset from 2x150 bp paired end Illumina sequencing and calculate statistically significant changes in reads mapping to various repeatmasker annotations within their centromeric contexts. This pipeline has been designed to handle "multimappers" i.e. repeat-derived reads that map to >1 location in the genome. For Straight lab users, all scripts and the bowtie1 dependancy are stored in `/home/groups/astraigh/shared/cutnrun_repeat_analysis/`
 
-Please note, the python scripts used in this pipeline were written by Georgi K. Marinov and published in his original manuscript https://doi.org/10.1016/j.devcel.2015.01.013
+Please note, the python scripts used in this pipeline were written by Georgi K. Marinov and published in his original manuscript https://doi.org/10.1016/j.devcel.2015.01.013. They are also available on https://github.com/georgimarinov/GeorgiScripts
 
 To run this pipeline, you will need:
 1. adaptor trimmed fastq files from Illumina PE sequencing for a control and a treatment with a minimum of 2 replicates per condition
