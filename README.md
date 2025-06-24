@@ -90,7 +90,7 @@ bedtools complement -i chm13v2.0_rmsk_censatanno.sorted.bed -g genome.fa > hs1.r
 bedtools makewindows -b hs1.rmsk_censat.complement.bed -w 1000 > hs1.rmsk_censat.complement.1kb.bed
 ```
 ### Step 5: Count reads in the repeatmasker_censat regions and the genomic complement
-We use custom python scripts (uploaded in scripts) for counting reads. Add the --uniqueBAM tag if the bam files were generated using -m 1 -v 0. If generated using -v 1 -a, do not add this tag.
+We use custom python scripts (uploaded in scripts) for counting reads. Add the --uniqueBAM tag if the bam files were generated using -m 1 -v 0. If generated using -v 1 -a, do not add this tag. If bam files were generated using -v 1 -a, this script will normalize multimappers by the number of genomic loci they map to (based on the NH tag added by the patched bowtie1. So for example, if one read maps equally well to 10,000 loci, each locus is assigned a weighted score of 0.0001.
 
 ```
 python bedRawReadCountsBAM.py3.py chm13v2.0_rmsk_censatanno.sorted.bed 0 WT_K9me3_r1.pfilter1.v0m1.bam WT_K9me3_r1.RM.censat.counts -uniqueBAM &&
