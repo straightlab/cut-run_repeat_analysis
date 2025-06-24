@@ -9,7 +9,8 @@ To run this pipeline, you will need:
 2. repeatmasker annotation bedfile
 3. centromeric annotation bedfile
 4. complete genome assembly fasta (preferably isogenomic assembly)
-5. Bash, R, python3
+5. chromosome sizes txt file
+6. Bash, R, python3
 
 ## Dependencies
 You will need to install the following softwares:
@@ -17,7 +18,7 @@ You will need to install the following softwares:
 2. bowtie1 patch that adds NH tags (https://mitra.stanford.edu/kundaje/marinovg/oak/programs/bowtie-1.0.1+hamrhein_nh_patch/)
 3. samtools  (https://github.com/samtools/samtools/releases/download/1.22/samtools-1.22.tar.bz2)
 4. bedtools (https://bedtools.readthedocs.io/en/latest/)
-5. DEseq2 (https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
+5. DEseq2 and its dependencies like tidyverse (https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
 
 ## Pipeline running instructions
 
@@ -33,7 +34,7 @@ bbmerge.sh pfilter=1 in1={WT_K9me3_r1.PE1} in2={WT_K9me3_r1.PE2} out=WT_K9me3_r1
 ### Step 2: bowtie1 alignment and samtools index
 1. Paired reads are aligned with either the strictest approach of no mismatches allowed and only unique alignments (-m 1 -v 0) or 1 mismatch allowed and all alignments reported (-v 1 -a). Of not, the --best and --strata options will choose for the best quality alignments even with -v 1 -a options. 
 
-In our paper, DEseq2 analysis for heterochromatin marks H3K9me2, H3K9me3 and H3K27me3 was performed with -m 1 -v 0. However, using these options for epigenetic marks concentrated specifically at the centromere, like CENP-A, is not ideal. For CENP-A, we instead used -v 1 -a for further processing. Additionally, all IGV plots, irrespective of the epigenetic mark, were made with the -v 1 -a options. We will only show steps for the -v1 -a files where they differ in processing from the uniquely aligned bams.
+In our paper, DEseq2 analysis for heterochromatin marks H3K9me2, H3K9me3 and H3K27me3 was performed with -m 1 -v 0. However, using these options for epigenetic marks concentrated specifically at the centromere, like CENP-A, is not ideal. For CENP-A, we instead used -v 1 -a for further processing. Additionally, all visualization tracks for Integrated Genome Viewer (IGV), irrespective of the epigenetic mark, were made with the -v 1 -a options. We will only show steps for the -v1 -a files where they differ in processing from the uniquely aligned bams.
 
 ```
 bowtie <path to bowtie index> -p 12 -t -v 0 -m 1 --best --strata -q --sam-nh -X 1000 --sam WT_K9me3_r1.pfilter1.fastq -S | samtools view -bS | samtools sort > WT_K9me3_r1.v0m1.bam
@@ -69,6 +70,11 @@ awk -F'\t' 'BEGIN{OFS="\t"} {
 ```
 bedtools sort -i chm13v2.0_rmsk_censatanno.bed > chm13v2.0_rmsk_censatanno.sorted.bed
 ```
+4. For chromosome-by-chromosome analysis to generated heatmaps, append the chr number of $1 to $4 of the file
+   
+```
+awk -F'\t' 'BEGIN{OFS="\t"} {$4 = $4 "_" $1; print}' chm13v2.0_rmsk_censatanno.sorted.bed > chm13v2.0_rmsk_censatanno.chr.sorted.bed
+```
 
 ### Step 4: Prepare genome bedfile for read counting
 In addition to counting reads aligning to repeat regions, we additionally need to count reads aligning to genomic bins. We choose 1 kb genomic bins, however the size can be changed depending on your application.
@@ -89,8 +95,111 @@ python bedRawReadCountsBAM.py3.py chm13v2.0_rmsk_censatanno.sorted.bed 0 WT_K9me
 ```
 
 ```
-python bedRawReadCountsBAM.py3.py hs1.rmsk_censat.complement.1kb.bed 0 WT_K9me3_r1.pfilter1.v0m1.bam WT_K9me3_r1.RM.censat.complement.counts -uniqueBAM &&
+python bedRawReadCountsBAM.py3.py hs1.rmsk_censat.complement.1kb.bed 0 WT_K9me3_r1.pfilter1.v0m1.bam WT_K9me3_r1.RM.complement.counts -uniqueBAM &&
 ```
+
+### Step 6: Sum reads that fall within the same repeatmasker_censat category 
+We use a custom python script (uploaded in scripts) for summing reads that fall within the same repeatmasker_censat category (e.g. ALR/Alpha_hor or, for chromosome-by-chromosome analysis, ALR/Alpha_hor_chr1). Make sure the column you use to base the summation on is column 4 (by bash) or column 3 (by python) 
+
+```
+python SumDups.py3.py WT_K9me3_r1.RM.censat.counts 3 7 WT_K9me3_r1.RM.censat.counts.sum
+```
+
+### Step 7: Merge counts from repeats to genomic complement and make a table 
+
+```
+cat <(awk 'BEGIN {OFS="\t"} {print "bin"NR, $4}' WT_K9me3_r1.RM.complement.counts)  <(awk 'BEGIN {OFS="\t"} {print $1, $2}' WT_K9me3_r1.censat.counts.sum) > WT_K9me3_r1.RM.censat.merge.counts.table
+```
+
+### Step 8: Make a DEseq2 counts table
+
+```
+sort -k1,1 WT_K9me3_r1.RM.censat.merge.counts.table | join -1 1 -2 1 -t$'\t' - <(sort -k1,1 WT_K9me3_r2.RM.censat.merge.counts.table) | join -1 1 -2 1 -t$'\t' - <(sort -k1,1 DKO_K9me3_r1.RM.censat.merge.counts.table) | join -1 1 -2 1 -t$'\t' - <(sort -k1,1 DKO_K9me3_r2.RM.censat.merge.counts.table) > K9me3_WT_r12_DKOr12.counts.table
+```
+
+### Step 9: If -v 1 -a options were used, integerize counts
+
+```
+awk 'BEGIN{FS=OFS="\t"} {print $1, sprintf("%.0f", $2), sprintf("%.0f", $3), sprintf("%.0f", $4), sprintf("%.0f", $5)}' K9me3_WT_r12_DKOr12.counts.table > K9me3_WT_r12_DKOr12.counts.int.table
+```
+
+### Step 10: Add a header to the table
+
+```
+echo -e "\tWT_r1\tWT_r2\tDKO_r1\tDKO_r2" | cat - K9me3_WT_r12_DKOr12.counts.table > K9me3_WT_r12_DKOr12.counts.htable
+```
+### Step 11: Make a sample metadata file
+1. We use vi to make the metadata file
+```
+vi K9me3_WT_r12_DKOr12.meta
+```
+2. Insert the following, making sure the names match with the table header from Step 10.
+
+```
+	sampletype
+WT_r1	control
+WT_r2	control
+DKO_r1	knockout
+DKO_r2	knockout
+```
+
+### Step 12: Make a DEseq2 script
+1. We use vi to make the DEseq2 script
+```
+vi DEseq2.R
+```
+2. Insert the following
+
+```
+library(DESeq2)
+library(tidyverse)
+
+K9me3_m1v0_censat <- read.table("K9me3_WT_r12_DKOr12.counts.htable", header = TRUE, sep = "\t", row.names = 1)
+
+metadata <- read.table("K9me3_WT_r12_DKOr12.meta", header = TRUE, sep = "\t", row.names = 1)
+
+print(ncol(K9me3_m1v0_censat))
+print(nrow(metadata))
+
+print(rownames(metadata))
+print(colnames(K9me3_m1v0_censat))
+
+dds <- DESeqDataSetFromMatrix(K9me3_m1v0_censat, metadata, design = ~ sampletype)
+
+dds <- DESeq(dds)
+
+contrast_K9me3_m1v0_censat <- c("sampletype", "knockout", "control")
+
+res_table <- results(dds, contrast=contrast_K9me3_m1v0_censat, alpha = 0.01)
+
+res_table <- lfcShrink(dds, contrast=contrast_K9me3_m1v0_censat, type="ashr", res=res_table)
+
+summary(res_table, alpha = 0.01)
+
+padj.cutoff <- 0.01
+
+res_table_tb <- res_table %>%
+  data.frame() %>%
+  rownames_to_column(var="gene") %>% 
+  as_tibble()
+
+sig <- res_table_tb %>%
+        filter(padj < padj.cutoff)
+saveRDS(sig, file = "sig_WTr12_DKOr12_K9me3_m1v0_censat.rds")
+saveRDS(res_table_tb, file = "res_table_tb_WTr12_DKO_r12_K9me3_m1v0_censat.rds")
+write.table(sig, file = "K9me3_censat_WTr12_DKOr12_sig.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+```
+
+And voila! You have a table containing your significant hits!
+
+### Step 13: Creating bigwig tracks for visualization
+Use a custom python script (in scripts) to generate normalized tracks for visualization
+
+```
+python bedRPKMfrombam.py3.py hs1.1kb.windows_lastbinremoved.bed 0 WT_K9me3_r1.pfilter1.v1a.bam hs1.chromsizes.txt WT_K9me3_r1.pfilter1.v1a.bdg -excludeReadsMappingToOtherChromosomes -RPM
+```
+
+
 
 
 
