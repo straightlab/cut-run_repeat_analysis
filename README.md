@@ -8,10 +8,10 @@ Please note, the python scripts used in this pipeline were written by Georgi K. 
 To run this pipeline, you will need:
 1. adaptor trimmed fastq files from Illumina PE sequencing for a control and a treatment with a minimum of 2 replicates per condition
    NOTE: For ease of readibility, we will use the control examples WT_K9me3_r1, WT_K9me3_r2 and the treatment examples DKO_K9me3_r1 and DKO_K9me3_r2. All code where only WT_K9me3_r1 is mentioned must in fact be run for all 4 conditions/replicates
-2. repeatmasker annotation bedfile
-3. centromeric annotation bedfile
-4. complete genome assembly fasta (preferably isogenomic assembly)
-5. chromosome sizes txt file
+2. repeatmasker annotation bedfile (for most recent CHM13 version, see https://github.com/marbl/CHM13)
+3. centromeric annotation bedfile (for most recent CHM13 version, see https://github.com/marbl/CHM13)
+4. complete genome assembly fasta (preferably isogenomic assembly, but can use CHM13 from https://github.com/marbl/CHM13)
+5. chromosome sizes txt file (https://github.com/marbl/CHM13)
 6. Bash, R, python3
 
 ## Dependencies
