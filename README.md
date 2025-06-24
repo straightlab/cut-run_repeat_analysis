@@ -195,7 +195,7 @@ write.table(sig, file = "K9me3_censat_WTr12_DKOr12_sig.txt", sep = "\t", quote =
 And voila! You have a table containing your significant hits!
 
 ### Step 13: Creating bigwig tracks for visualization
-Use a custom python script (in scripts) to generate normalized tracks for visualization
+Use a custom python script (in scripts) to generate normalized bedGraph tracks for visualization. This script takes a bam file containing NH tags and generated with -v 1 -a to output a bedGraph where reads are nomalized to the number of genomic loci they map to.
 
 ```
 python bedRPKMfrombam.py3.py hs1.1kb.windows_lastbinremoved.bed 0 WT_K9me3_r1.pfilter1.v1a.bam hs1.chromsizes.txt WT_K9me3_r1.pfilter1.v1a.bdg -excludeReadsMappingToOtherChromosomes -RPM
