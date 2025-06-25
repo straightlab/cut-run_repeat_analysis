@@ -26,7 +26,7 @@ You will need to install the following softwares:
 
 ### Step 0: Prepare fastq files
 1. Use your favorite Illumina adaptor trimming method to trim sequencing adaptors from fastq files. We use Trimmomatic.
-2. Prepare bowtie1 index for the T2Tv2.0 genome
+2. Prepare bowtie1 index for the T2Tv2.0 genome or another isogenomic sequence
 
 ### Step 1: Pairing reads with perfect overlap
 With 2 x 150 bp PE sequencing, we first merged reads with no mismatch in the overlap. This is to get slightly longer fragments to align.
