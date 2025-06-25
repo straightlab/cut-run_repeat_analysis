@@ -34,9 +34,9 @@ With 2 x 150 bp PE sequencing, we first merged reads with no mismatch in the ove
 bbmerge.sh pfilter=1 in1={WT_K9me3_r1.PE1} in2={WT_K9me3_r1.PE2} out=WT_K9me3_r1.pfilter1.fastq
 ```
 ### Step 2: bowtie1 alignment and samtools index
-1. Paired reads are aligned with either the strictest approach of no mismatches allowed and only unique alignments (-m 1 -v 0) or 1 mismatch allowed and all alignments reported (-v 1 -a). Of not, the --best and --strata options will choose for the best quality alignments even with -v 1 -a options. 
+1. Paired reads are aligned with either the strictest approach of no mismatches allowed and only unique alignments (-m 1 -v 0) or 1 mismatch allowed and all alignments reported (-v 1 -a). Of note, the --best and --strata options will choose for the best quality alignments with -v 1 -a options. 
 
-In our paper, DEseq2 analysis for heterochromatin marks H3K9me2, H3K9me3 and H3K27me3 was performed with -m 1 -v 0. However, using these options for epigenetic marks concentrated specifically at the centromere, like CENP-A, is not ideal. For CENP-A, we instead used -v 1 -a for further processing. Additionally, all visualization tracks for Integrated Genome Viewer (IGV), irrespective of the epigenetic mark, were made with the -v 1 -a options. We will only show steps for the -v1 -a files where they differ in processing from the uniquely aligned bams.
+In our paper, DEseq2 analysis for heterochromatin marks H3K9me2, H3K9me3 and H3K27me3 was performed with -m 1 -v 0. However, using these options for epigenetic marks concentrated specifically at the centromere, like CENP-A, is not ideal. For CENP-A, we instead used -v 1 -a for further processing. Additionally, all visualization tracks for Integrated Genome Viewer (IGV), irrespective of the epigenetic mark, were made with bams processed with the -v 1 -a options (see Step 13). We will only show steps for the -v1 -a files where they differ in processing from the uniquely aligned bams.
 
 ```
 bowtie <path to bowtie index> -p 12 -t -v 0 -m 1 --best --strata -q --sam-nh -X 1000 --sam WT_K9me3_r1.pfilter1.fastq -S | samtools view -bS | samtools sort > WT_K9me3_r1.v0m1.bam
